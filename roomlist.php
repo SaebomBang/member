@@ -4,7 +4,7 @@ require __DIR__ . "/common/dbconn.php";
 $pageTitle = "객실 리스트";
 include __DIR__ . "/common/head.php";
 
-// 1. 검색 조건 설정 (쿼리를 실행하기 전에 미리 정의해야 합니다)
+// 1. 검색 조건 설정
 $whereClause = "1"; // 기본값: 모든 데이터 검색
 if (isset($_GET["keyword"]) && trim($_GET["keyword"]) !== "") {
     $key = mysqli_real_escape_string($conn, $_GET["keyword"]); // 보안 처리
@@ -52,7 +52,7 @@ $rs_num = mysqli_num_rows($rs);
 
     <?php if ($rs_num == 0): ?>
     <tr>
-        <td colspan="4" align="center" style="padding:50px;">등록된 객실이 없거나 검색 결과가 없습니다.</td>
+        <td colspan="4" align="center" style="padding:50px;">검색 결과가 없습니다.</td>
     </tr>
     <?php else: ?>
         <?php while ($rs_arr = mysqli_fetch_array($rs)): 
