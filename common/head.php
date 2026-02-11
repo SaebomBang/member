@@ -10,7 +10,7 @@ if (!isset($pageTitle))
     <meta charset="utf-8">
     <title><?= h($pageTitle) ?></title>
     <link rel="stylesheet" href="/member/assets/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/member/assets/admin.css">
+    <link rel="stylesheet" href="/member/assets/member.css">
 </head>
 
 <body class="bg-light">
