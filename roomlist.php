@@ -4,63 +4,92 @@ require __DIR__ . "/common/dbconn.php";
 $pageTitle = "객실 리스트";
 include __DIR__ . "/common/head.php";
 
-// 1. 호수(r_name) 순서대로 데이터를 가져옵니다 (101호, 102호...)
-$strSQL = "SELECT * FROM room ORDER BY r_no ASC";
+// 1. 검색 조건 설정 (쿼리를 실행하기 전에 미리 정의해야 합니다)
+$whereClause = "1"; // 기본값: 모든 데이터 검색
+if (isset($_GET["keyword"]) && trim($_GET["keyword"]) !== "") {
+    $key = mysqli_real_escape_string($conn, $_GET["keyword"]); // 보안 처리
+    $room_s = $_GET["room_s"];
+
+    switch ($room_s) {
+        case '1':
+            $whereClause = "r_no LIKE '%$key%'";
+            break;
+        case '2':
+            $whereClause = "r_name LIKE '%$key%'";
+            break;
+        case '3':
+            $whereClause = "floor LIKE '%$key%'";
+            break;
+        default:
+            $whereClause = "1";
+    }
+}
+
+// 2. 최종 쿼리 실행
+$strSQL = "SELECT * FROM room WHERE $whereClause ORDER BY r_no ASC";
 $rs = mysqli_query($conn, $strSQL);
+$rs_num = mysqli_num_rows($rs);
 ?>
 
-<table border="1" style="width:100%; border-collapse: collapse; margin-top: 20px;">
+<!-- 검색 창을 상단으로 이동 (사용자 편의성) -->
+<form method="get" action="roomlist.php" style="margin-bottom: 20px; text-align: center;">
+    <select name="room_s">
+        <option value="1" <?php if(@$_GET['room_s'] == '1') echo 'selected'; ?>>객실번호</option>
+        <option value="2" <?php if(@$_GET['room_s'] == '2') echo 'selected'; ?>>객실타입</option>
+        <option value="3" <?php if(@$_GET['room_s'] == '3') echo 'selected'; ?>>층수</option>
+    </select>
+    <input type="text" name="keyword" value="<?php echo htmlspecialchars(@$_GET['keyword']); ?>">
+    <input type="submit" value="검색">
+    <a href="roomlist.php"><button type="button">초기화</button></a>
+</form>
+
+<table border="1" style="width:100%; border-collapse: collapse;">
     <tr>
-        <th colspan="4" style="padding:15px;"><font style="font-size:150%;">객실 리스트</font></th>
-    </tr>
-
-    <?php
-    // 2. while문을 사용하여 모든 객실 정보를 반복 출력
-    while ($rs_arr = mysqli_fetch_array($rs)) {
-        $r_no = $rs_arr["r_no"];      // 예: 101호
-        $type   = $rs_arr["r_name"];      // 예: 싱글룸 (이미지 파일명과 일치해야 함)
-        $max    = $rs_arr["max_people"];  // 예: 1
-        $price  = $rs_arr["r_price"];     // 예: 50000
-    
-
-        // 3. 이미지 경로 설정
-        // 파일 위치: /var/www/html/member/common/싱글룸.png
-        // 현재 페이지: /var/www/html/member/roomlist.php 이므로 상대경로는 common/파일명
-        $image_name = $type . ".png"; 
-        $image_path = "common/" . $image_name;
-    ?>
-
-    <tr>
-        
-        <!-- 호수 출력 -->
-        <th width="100" align="center">
-            <b style="font-size:1.2em;"><?php echo $r_no; ?>호</b>
+        <th colspan="4" style="padding:15px; background-color: #eee;">
+            <font style="font-size:150%;">객실 리스트 (<?php echo $rs_num; ?>건)</font>
         </th>
-
-
-        <!-- 사진 출력 -->
-        <td width="200" align="center" style="padding:10px;">
-            <img src="<?php echo $image_path; ?>" width="180" alt="<?php echo $type; ?>" onerror="this.src='common/noimage.png';">
-        </td>
-        
-        
-        <!-- 레이블 열 -->
-        <td width="120" style="padding-left:10px; background-color:#f8f8f8;">
-            <p>타입</p>
-            <p>숙박인원</p>
-            <p>1박 금액</p>
-        </td>
-        
-        <!-- 실제 데이터 열 -->
-        <td style="padding-left:10px;">
-            <p><?php echo $type; ?></p>
-            <p><?php echo $max; ?>명</p>
-            <p><?php echo number_format($price); ?>원</p>
-        </td>
     </tr>
 
-    <?php
-    } // while문 끝
-    ?>
+    <?php if ($rs_num == 0): ?>
+    <tr>
+        <td colspan="4" align="center" style="padding:50px;">등록된 객실이 없거나 검색 결과가 없습니다.</td>
+    </tr>
+    <?php else: ?>
+        <?php while ($rs_arr = mysqli_fetch_array($rs)): 
+            $r_no   = $rs_arr["r_no"];
+            $type   = $rs_arr["r_name"];
+            $max    = $rs_arr["max_people"];
+            $price  = $rs_arr["r_price"];
+            
+            $image_name = $type . ".png"; 
+            $image_path = "common/" . $image_name;
+        ?>
+        <tr>
+            <!-- 호수 출력 -->
+            <th width="100" align="center">
+                <b style="font-size:1.2em;"><?php echo $r_no; ?>호</b>
+            </th>
+
+            <!-- 사진 출력 -->
+            <td width="200" align="center" style="padding:10px;">
+                <img src="<?php echo $image_path; ?>" width="180" alt="<?php echo $type; ?>" onerror="this.src='common/noimage.png';">
+            </td>
+            
+            <!-- 레이블 열 -->
+            <td width="120" style="padding-left:10px; background-color:#f8f8f8;">
+                <p>타입</p>
+                <p>숙박인원</p>
+                <p>1박 금액</p>
+            </td>
+            
+            <!-- 실제 데이터 열 -->
+            <td style="padding-left:10px;">
+                <p><?php echo $type; ?></p>
+                <p><?php echo $max; ?>명</p>
+                <p><?php echo number_format($price); ?>원</p>
+            </td>
+        </tr>
+        <?php endwhile; ?>
+    <?php endif; ?>
 </table>
 
